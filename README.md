@@ -1,6 +1,6 @@
 # docker-cacti
 
-Docker container for [cacti 1.2.5][3]
+Docker container for [cacti 1.2.7][3] based on [QuantumObject/docker-cacti][5], reworked for using external MySQL through environment variables.
 
 "Cacti is a complete network graphing solution designed to harness the power of [RRDTool's][6] data storage and graphing functionality. Cacti provides a fast poller, advanced graph templating, multiple data acquisition methods, and user management features out of the box. All of this is wrapped in an intuitive, easy to use interface that makes sense for LAN-sized installations up to complex networks with hundreds of devices."
 
@@ -19,7 +19,41 @@ To install docker in Ubuntu 18.04 use the commands:
 
 To run container use the command below:
 
-    $ docker run -d -p 80  quantumobject/docker-cacti
+    docker run -d -p 80 -e MYSQL_ENV_HOST=db.example.com -e MYSQL_ENV_USER_PASSWD=cactiuserpasswd kiba/docker-cacti
+
+Or with next compose file:
+
+    $ cat docker-compose.yml
+    ---
+    version: '3'
+    
+    services:
+      cactiweb:
+        image: kiba/docker-cacti:latest
+        depends_on:
+          - cactidb
+        ports:
+          - "8080:80"
+          - "161:161"
+        environment:
+          - TZ=Asia/Sakhalin
+          - MYSQL_ENV_HOST=cactidb
+          - MYSQL_ENV_DBNAME=cacti
+          - MYSQL_ENV_USER=cacti
+          - MYSQL_ENV_USER_PASSWD=cactiuserpasswd
+          - MYSQL_ENV_ROOT_PASSWD=cactipasswd
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /opt/cacti/plugins/:/opt/cacti/plugins/
+          - /opt/cacti/templates:/opt/cacti/templates/
+      cactidb:
+        image: mysql:5.7
+        environment:
+          - MYSQL_ROOT_PASSWORD=cactipasswd
+        restart: always
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /opt/db_data:/var/lib/mysql
 
 ** -p 161:161  ==> remove to make sure you can monitor container and server running the container , this second more important to be able to monitoring all network interface of the server.
 
@@ -29,11 +63,10 @@ To run container use the command below:
   
 or in yml:
 
-  environment:
-  
+    environment:
      - TZ=Europe/London
    
-Default value is America/New_York .   
+Default value is Asia/Sakhalin .
 
 ## Accessing the Cacti applications:
 
@@ -77,17 +110,28 @@ download and unpack plugins
 
 and them access to cacti console/plugin management and install it and enable it. This is only for an example, to install and configured flowview you need to check its documentation.  [https://github.com/Cacti/plugin_flowview/blob/develop/README.md][8]
 
-## To backup, restore cacti database :
+## To initialize cacti database
 
-To backup use the command below:
+Recommended MySQL settings:
 
-     $ docker exec -it container_id /sbin/backup
-
-Them backup data was created /var/backups/alldb_backup.sql.
-
-To restore use the command below:
-
-     $ docker exec -it container_id /sbin/restore
+    $ cat /etc/my.cnf
+    [mysqld]
+    max_heap_table_size = 1073741824
+    max_allowed_packet = 16777216
+    tmp_table_size = 256M
+    join_buffer_size = 320M
+    innodb_file_format=Barracuda
+    innodb_large_prefix=1
+    innodb_io_capacity=5000
+    innodb_buffer_pool_instances=33
+    innodb_buffer_pool_size = 4294967296
+    innodb_doublewrite = ON
+    innodb_flush_log_at_timeout = 10
+    innodb_read_io_threads = 32
+    innodb_write_io_threads = 16
+    innodb_additional_mem_pool_size = 80M
+    collation-server = utf8mb4_unicode_ci
+    character-set-server = utf8mb4
 
 ## More Info
 

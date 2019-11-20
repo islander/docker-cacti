@@ -1,8 +1,29 @@
-cacti:
-  image: quantumobject/docker-cacti
-  ports:
-   - "80:80"
-   - "161:161"
-  volumes:
-   - /etc/localtime:/etc/localtime:ro
-   - ./backups/:/var/backups/
+---
+version: '3'
+
+services:
+  cactiweb:
+    image: kiba/cacti
+    depends_on:
+      - cactidb
+    ports:
+      - "8080:80"
+      - "161:161"
+    environment:
+      - TZ=Asia/Sakhalin
+      - MYSQL_ENV_HOST=cactidb
+      - MYSQL_ENV_ROOT_PASSWD=cactipasswd
+      - MYSQL_ENV_USER_PASSWD=cactiuserpasswd
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./backups/:/var/backups/
+      - /opt/cacti/plugins/:/opt/cacti/plugins/
+      - /opt/cacti/templates:/opt/cacti/templates/
+  cactidb:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=cactipasswd
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/db_data:/var/lib/mysql

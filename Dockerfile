@@ -1,5 +1,5 @@
 # name of container: docker-cacti
-# version of container: 0.7.0
+# version of container: 0.7.1
 FROM quantumobject/docker-baseimage:18.04
 MAINTAINER kiba "zombie32@gmail.com"
 

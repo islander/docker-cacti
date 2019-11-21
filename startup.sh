@@ -7,23 +7,25 @@ if [ -f /etc/configured ]; then
 else
         # code that need to run only one time ....
         SPINE_CONF=/usr/local/spine/etc/spine.conf
-        MYSQL_BIN="mysql -h ${MYSQL_ENV_HOST} -u root -p${MYSQL_ENV_ROOT_PASSWD}"
+        [ -z "$MYSQL_ENV_USER" ] && MYSQL_ENV_USER="cacti"
+        MYSQL_BIN="mysql -h ${MYSQL_ENV_HOST} -u ${MYSQL_ENV_USER} -p${MYSQL_ENV_USER_PASSWD}"
+        MYSQL_BIN_ROOT="mysql -h ${MYSQL_ENV_HOST} -u root -p${MYSQL_ENV_ROOT_PASSWD}"
 
         init_cacti_db() {
             echo "CREATE DATABASE IF NOT EXISTS cacti" \
-                    | $MYSQL_BIN
+                    | $MYSQL_BIN_ROOT
             echo "GRANT ALL ON cacti.* TO cacti@'%' IDENTIFIED BY '${MYSQL_ENV_USER_PASSWD}'; FLUSH PRIVILEGES; " \
-                    | $MYSQL_BIN
+                    | $MYSQL_BIN_ROOT
             echo "GRANT SELECT ON mysql.time_zone_name TO cacti@'%' IDENTIFIED BY '${MYSQL_ENV_USER_PASSWD}'; FLUSH PRIVILEGES; " \
-                    | $MYSQL_BIN
-            $MYSQL_BIN cacti < /opt/cacti/cacti.sql
+                    | $MYSQL_BIN_ROOT
+            $MYSQL_BIN_ROOT cacti < /opt/cacti/cacti.sql
             echo "ALTER DATABASE cacti CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" \
-                    | $MYSQL_BIN cacti
+                    | $MYSQL_BIN_ROOT cacti
         }
 
         # initialize database if not exists
         DBS="$(echo "SHOW DATABASES;" | $MYSQL_BIN | grep -c cacti)"
-        if [ "${DBS}" -eq "0" ]
+        if [ "${DBS}" -eq "0" ] && [ -z "${MYSQL_ENV_ROOT_PASSWD}" ]
         then
                 init_cacti_db
         fi

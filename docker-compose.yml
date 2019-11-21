@@ -3,7 +3,7 @@ version: '3'
 
 services:
   cactiweb:
-    image: kiba/cacti
+    image: kiba/docker-cacti
     depends_on:
       - cactidb
     ports:

@@ -24,10 +24,15 @@ else
         }
 
         # initialize database if not exists
-        DBS="$(echo "SHOW DATABASES;" | $MYSQL_BIN | grep -c cacti)"
-        if [ "${DBS}" -eq "0" ] && [ -z "${MYSQL_ENV_ROOT_PASSWD}" ]
+        if [[ -z "${MYSQL_ENV_ROOT_PASSWD}" ]]
         then
-                init_cacti_db
+                echo "no mysql root password, skipping initialization."
+        else
+                DBS="$(echo "SHOW DATABASES;" | $MYSQL_BIN_ROOT | grep -c cacti)"
+                if [[ "${DBS}" -eq "0" ]]
+                then
+                        init_cacti_db
+                fi
         fi
 
         # adjust spine MySQL configuration
